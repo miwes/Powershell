@@ -3,11 +3,25 @@
 Module urceny pro logovani do souboru, konzole
 #>
 
+<#
+.SYNOPSIS
+Funkce vraci naformatovany datum jako string
+#>
 Function Private_GetDate {
-    $Date = $(Get-Date -Format('yyyy-MM-dd HH:mm:ss'))
+    [string]$Date = $(Get-Date -Format('yyyy-MM-dd HH:mm:ss'))
     Return $Date
 }
 
+<#
+.SYNOPSIS
+Zapise udalost do souboru, pri pouziti verbose i do konzole
+.Parameter Message
+Zprava ktera ma byt zapsana do souboru
+.Parameter Type
+Typ udalosti. Muze byt definovany 3 (Information, Warning, Error). Pokud neni definovane je vychozi Information
+.Parameter LogFile
+Soubor kam se maji informace zaspat. Data jsou vzdy pridany
+#>
 Function Add-Log {
      [CmdletBinding()]Param(
          [Parameter(Mandatory=$true,ValueFromPipeline=$True)]
