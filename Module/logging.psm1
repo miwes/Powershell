@@ -1,4 +1,3 @@
-
 Function Private_GetDate {
     $Date = $(Get-Date -Format('yyyy-MM-dd HH:mm:ss'))
     Return $Date
