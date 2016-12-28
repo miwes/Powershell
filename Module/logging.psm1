@@ -1,3 +1,8 @@
+<#
+.SYNOPSIS
+Module urceny pro logovani do souboru, konzole
+#>
+
 Function Private_GetDate {
     $Date = $(Get-Date -Format('yyyy-MM-dd HH:mm:ss'))
     Return $Date
