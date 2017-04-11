@@ -34,9 +34,13 @@ Function Private_SetLogFile {
          [string]$CSVHeader
     )
     If (![System.IO.File]::Exists($LogFile)) {
-        $stream = New-Object 'System.IO.StreamWriter' -ArgumentList $logFile, $False
-        $stream.WriteLine($CSVHeader)
-        $stream.Close()
+        Try {
+            $stream = New-Object System.IO.StreamWriter -ArgumentList $logFile, $False
+            $stream.WriteLine($CSVHeader)
+            $stream.Close()
+        } Catch {
+            Return -1
+        }
     }
     Return 0
 }
