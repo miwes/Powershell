@@ -4,7 +4,8 @@
 .DESCRIPTION 
 .NOTES 
     Author     : Michal Weis
-    Version    : 1.0
+    Version    : 1.1
+        29.5.2017 - Add Owner job
 			
 
 .LINK 
@@ -75,7 +76,8 @@ If (!(Add-Module -Module 'SQLPS')) {
 }
 
   
-[string]$Query = 'SELECT
+[string]$Query = 'USE MSDB
+SELECT
     @@ServerName AS [Hostname]
 	,SJ.Name AS [JobName]
 	, SJ.description AS [JobDescription]
@@ -85,10 +87,12 @@ If (!(Add-Module -Module 'SQLPS')) {
 		WHEN 3 THEN ''Cancelled''
 		WHEN 4 THEN ''In Progress''
 	END AS [LastRunStatus]
+	, SL.name AS [Owner]
 	, dbo.agent_datetime(SJH.run_date,SJH.run_time) AS [DateRun]
 
 FROM SysJobs	AS SJ
 JOIN SysJobHistory		AS SJH	ON SJH.job_id = SJ.job_id
+LEFT JOIN master.sys.syslogins SL on SJ.owner_sid = SL.sid
 
 WHERE 
 	-- posledni den
@@ -100,10 +104,9 @@ WHERE
     -- failed job
     AND (SJH.run_status = 0 OR SJH.run_status = 3)
 
-ORDER BY SJH.run_status'
+ORDER BY SJH.run_statu'
 [string]$DBName = 'msdb'
 $Results = @()
-
 ForEach ($SQLServer in $SQLServers) {
     Try {
         $Result = @(Invoke-Sqlcmd -ServerInstance $SQLServer -Database $DBName -Query $Query)
@@ -122,13 +125,14 @@ ForEach ($SQLServer in $SQLServers) {
         $Results += $Result
     }
 }
+
 $sHTML = "<html><head><title>Backup report</title></head>"
 $sHTML += "<style>BODY{font-family: Arial; font-size: 10pt;}"
 $sHTML += "TABLE{border: 1px solid black; border-collapse: collapse;}"
 $sHTML += "TH{border: 1px solid black; background: #dddddd; padding: 5px; }"
 $sHTML += "TD{border: 1px solid black; padding: 5px; }"
 $sHTML +=  "</style><body>"    
-$sHTML += "<h3><Font face='Arial'>SQL jobs report (not success)</font></h3>"
+$sHTML += "<h3><Font face='Arial'>SQL jobs report - " + $Results.Count + " not success</font></h3>"
 #$sHTML += "<hr>"
 $sHTML += "<TABLE style='font-weight:normal; border-collapse: collapse'>"
 $SHTML += "<TR style='font-family:Arial;background-color:#A6DBCF'>
@@ -136,6 +140,7 @@ $SHTML += "<TR style='font-family:Arial;background-color:#A6DBCF'>
             <TH style='font-weight:bold;text-align:left' >Job name</TH>
             <TH style='font-weight:bold;text-align:right' >Job description</TH>
             <TH style='font-weight:bold;text-align:center' >Last run status</TH>
+            <TH style='font-weight:bold;text-align:center' >Owner</TH>
             <TH style='font-weight:bold;text-align:center' >Date run</TH>
             </TR>"
 
@@ -145,11 +150,13 @@ ForEach($Line In $Results) {
         $sHTML += "<TD style='font-weight:normal;text-align:left'>$($Line.JobName)</TD>"
         $sHTML += "<TD style='font-weight:normal;text-align:right'>$($Line.JobDescription)</TD>"
         $sHTML += "<TD style='font-weight:normal;text-align:center'>$($Line.LastRunStatus)</TD>"
+        $sHTML += "<TD style='font-weight:normal;text-align:center'>$($Line.Owner)</TD>"
         $sHTML += "<TD style='font-weight:normal;text-align:center'>$($Line.DateRun)</TD>"
         $sHTML += "</TR>"
 }
 $sHTML += "</TABLE>"
 $sHTML += "</body>"
 
-$sSubject = "SQL jobs report (not success)"
+$sSubject = "SQL jobs report - " + $Results.Count + " not success"
+$sHTML
 Send-Email -From $mailFrom -To $mailTo -Subject $sSubject -Body $sHTML -SMTPServer $SMTP
