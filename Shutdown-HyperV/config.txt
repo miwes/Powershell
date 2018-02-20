@@ -1,0 +1,21 @@
+Setting=Value
+# log folder
+LogFilePath=.\
+
+# exlude VM
+excludeVM=kerio
+
+# tier 1 exclude
+tier1=rds01
+
+# tier 2 exclude
+tier2=mt01,mt02,sql01,sql02,j-dc01
+
+# tier 3 exclude
+tier3=AD01,gw01
+
+# hyper-v name
+hyperv=hyperv01
+
+# timeout shutdown VM (minutes)
+timeout=1
