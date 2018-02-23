@@ -48,7 +48,7 @@ Try {
 
 Try {
     Write-Verbose 'Setting CA'
-    Install-AdcsCertificationAuthority -CAType EnterpriseRootCa -CryptoProviderName "RSA#Microsoft Software Key Storage Provider" -KeyLength 2048 -HashAlgorithmName SHA256 -ValidityPeriod Years -ValidityPeriodUnits 20 -CaCommonName "CA $Firma" -Force
+    Install-AdcsCertificationAuthority -CAType EnterpriseRootCa -CryptoProviderName "RSA#Microsoft Software Key Storage Provider" -KeyLength 2048 -HashAlgorithmName SHA256 -ValidityPeriod Years -ValidityPeriodUnits 20 -CaCommonName "$Firma CA" -Force
     Write-Verbose 'Setting Audit CA'
     & Certutil -setreg CA\AuditFilter 127
 } Catch {
