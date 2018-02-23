@@ -89,3 +89,6 @@ Try {
 } Catch {
     Write-Warning "Error when add CA template - $Error[0]"
 }
+
+Write-Verbose 'Change max issued certificate validity'
+certutil -setreg ca\ValidityPeriodUnits 5
