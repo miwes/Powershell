@@ -51,6 +51,7 @@ Try {
     Install-AdcsCertificationAuthority -CAType EnterpriseRootCa -CryptoProviderName "RSA#Microsoft Software Key Storage Provider" -KeyLength 2048 -HashAlgorithmName SHA256 -ValidityPeriod Years -ValidityPeriodUnits 20 -CaCommonName "$Firma CA" -Force
     Write-Verbose 'Setting Audit CA'
     & Certutil -setreg CA\AuditFilter 127
+    & Auditpol /set /category:"Object Access" /failure:enable /success:enable
 } Catch {
     Write-Warning "Error when configurated CA - $Error[0]"
     Exit
