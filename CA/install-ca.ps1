@@ -91,4 +91,4 @@ Try {
 }
 
 Write-Verbose 'Change max issued certificate validity'
-certutil -setreg ca\ValidityPeriodUnits 5
+certutil -setreg ca\ValidityPeriodUnits 10
