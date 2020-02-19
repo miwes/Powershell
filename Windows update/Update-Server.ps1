@@ -20,8 +20,8 @@
 [CmdletBinding()]
 Param
 (
-       [Parameter(Mandatory=$False,Position=0)] [string]$logPath = "\\test\Logs",
-       [Parameter(Mandatory=$False,Position=1)] [ValidateSet("true","false")] [string]$reboot = 'false'
+       [Parameter(Mandatory=$False,Position=0)] [string]$logPath = "\\pasvdcext01\SYSVOL\aclab.ext\scripts\logs",
+       [Parameter(Mandatory=$False,Position=1)] [ValidateSet("true","false")] [string]$reboot = 'true'
 )
 
 Function Get-RunAs

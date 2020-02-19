@@ -16,11 +16,11 @@
 [CmdletBinding()]
 Param
 (
-       [Parameter(Mandatory=$False)] [string]$logPath = "\\test.local\Logs\",
+       [Parameter(Mandatory=$False)] [string]$logPath = "\\aclab.ext\SYSVOL\aclab.ext\scripts\logs",
        [Parameter(Mandatory=$False)] [int]$day = 4,
-       [Parameter(Mandatory=$False)] [string]$mailTo = 'test@test.cz',
-       [Parameter(Mandatory=$False)] [string]$mailFrom = 'report@testcz',
-       [Parameter(Mandatory=$False)] [string]$SMTP = 'smtp'
+       [Parameter(Mandatory=$False)] [string]$mailTo = 'ACLABSpravci@aclab.cz',
+       [Parameter(Mandatory=$False)] [string]$mailFrom = 'noreply@aclab.cz',
+       [Parameter(Mandatory=$False)] [string]$SMTP = '192.168.223.15'
        
 )
 
@@ -88,7 +88,7 @@ Function Get-HtmlReport
     $sHTML += "TD{border: 1px solid black; padding: 5px; }"
     $sHTML +=  "</style>"    
     $SHTML += "<body>"
-    $sHTML += "<h3><Font face='Arial'>Report install updatu server: $fromDate</font></h3>"
+    $sHTML += "<h3><Font face='Arial'>Report install updatu serveru ACLABEXT: $fromDate</font></h3>"
     $sHTML += "<hr>"
     $sHTML += "<TABLE style='font-weight:normal; border-collapse: collapse'>"
     $SHTML += "<TR style='font-family:Arial'>
@@ -160,11 +160,11 @@ If ($file.Count -ne 0)
     $sHTML= Get-HtmlReport -Data $logData  -Day $day
     If (($logData | group-object status | Where {$_.name -eq 'error'} | Select -ExpandProperty Count) -gt 0)
     {
-        $sSubject = "[Error] Report update serveru : $($file.Count) server(s)"
+        $sSubject = "[Error] Report update serveru ACLABEXT: $($file.Count) server(s)"
     }
     Else
     {
-        $sSubject = "[Success] Report update serveru : $($file.Count) server(s)"    
+        $sSubject = "[Success] Report update serveru ACLABEXT: $($file.Count) server(s)"    
     }
 }
 Else 

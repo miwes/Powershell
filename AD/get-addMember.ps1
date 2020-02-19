@@ -1,12 +1,20 @@
-#
-# version 1.1
-# 13.12.2016 - add SID translate for add user
-#
+<#
+.SYNOPSIS
+    Notification change group membership
+.DESCRIPTION
+.NOTES
+    Author : Michal Weis
+     version 1.1
+     13.12.2016 - add SID translate for add user
+
+    # EventID 4728 - Global Group
+    # EventID 4756 - Universal Group
+    # EventID 4732 - LocalGroup
+
+.LINK
+#>
 
 Set-Culture "en-US"
-# EventID 4728 - Global Group
-# EventID 4756 - Universal Group
-# EventID 4732 - LocalGroup
 
 Function Translate-SID
 {
@@ -19,9 +27,9 @@ Function Translate-SID
 	Return	$objSID.Translate( [System.Security.Principal.NTAccount]).Value
 }
 
-$securityLog = Get-WinEvent 'ForwardedEvents' -FilterXPath "*[System[(EventID=4728 or EventID=4756 or EventID=4732)]]" -MaxEvents 1;
+$securityLog = Get-WinEvent 'Security' -FilterXPath "*[System[(EventID=4728 or EventID=4756 or EventID=4732)]]" -MaxEvents 1;
 
-$to = 'aaclab@autocont.cz';
+$to = 'michal.weis@autocont.cz';
 $logArray = $securityLog.message.split("`n")
 
 $ADGroup = $logArray[14].Split("`t")[3].Trim()
@@ -57,5 +65,5 @@ If ($ADGroup -like '*admin*')
 	$sHTML += "</TABLE>"
 	$sHTML += "</body>"
 
-	Send-MailMessage -SmtpServer 'pasvex01.aclab.local' -From 'noretry@aclab.cz' -To $to -Body $sHTML -Subject $subject -BodyAsHtml
+	Send-MailMessage -SmtpServer 'KV-MGMT01.kkn.cz' -From 'noretry@kkn.cz' -To $to -Body $sHTML -Subject $subject -BodyAsHtml
 }
