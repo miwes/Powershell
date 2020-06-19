@@ -1,0 +1,2 @@
+ ;Vystup skriptu do souboru
+ $zeme = 'Partners'; $(.\Move-InactiveUser.ps1 -WhatIf) *>&1> "$zeme.txt"
