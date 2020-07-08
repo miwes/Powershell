@@ -1,0 +1,17 @@
+#
+# Demo config fileu
+#
+Setting=Value
+
+#
+# Adresa serveru
+#
+URL=http://sd01:8080/axis/services/USD_R11_WebServic
+SDUsername=servicedesk
+
+# cesta k adresari z logy
+LogFilePath=.\
+
+#convert PC config
+PCData=.\data.csv
+DomainNameToRemove=CAH/
