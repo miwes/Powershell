@@ -16,7 +16,7 @@
 [CmdletBinding()]Param (
      [Parameter(Mandatory=$False)] [Alias("LogFile")] [string]$attrLogPath = 'c:\temp\log\'
     ,[Parameter(Mandatory=$False)] [Alias("SQLServer")] [string]$attrSQLServer = 'localhost'
-    ,[Parameter(Mandatory=$False)] [Alias("SQLDatabases")] [array]$attrDatabases = @('master','model','MM_Kompetence')
+    ,[Parameter(Mandatory=$False)] [Alias("SQLDatabases")] [array]$attrDatabases = @('master','model','Kompetence')
 )
 
 # inicialization
