@@ -14,18 +14,18 @@
 #>
 
 [CmdletBinding()]Param (
-    [Parameter(Mandatory=$True)] [string]$attrHyperV
-    ,[Parameter(Mandatory=$False)] [boolean]$attrCluster = $False
+    [Parameter(Mandatory=$True)] [string]$attrHyperV
+    ,[Parameter(Mandatory=$False)] [boolean]$attrCluster = $False
     ,[Parameter(Mandatory=$False)] [string]$attrReportFile = '.\report.csv'
 )
 
-# inicialization
+# inicialization
 Set-StrictMode -Version latest
 $global:ErrorActionPreference = 'Stop'
 $Error.Clear()
 
 If ($attrCluster -eq $True) {
-    $nodes = Get-ClusterNode
+    $nodes = Get-ClusterNode -Cluster $attrHyperV
 } Else {
     $nodes = $attrHyperV
 }
@@ -40,7 +40,10 @@ ForEach ($node in $nodes) {
         
     ForEach ($VM In $VMs) {
 
-        $Data = '' | Select-Object Name, State, MemoryMB, PathVM, CPUCount, `
+        Write-Verbose "Getting information about $($VM.Name) ... "
+        
+        $Data = '' | Select-Object Name, State, MemoryMB, PathVM, CPUCount, Version, ` 
+            NetworkSwitch,NetworkStatus,NetworkVLANID, `
             "Path disk 1", "Size (GB) disk 1", "Type disk 1", `
             "Path disk 2", "Size (GB) disk 2", "Type disk 2", `
             "Path disk 3", "Size (GB) disk 3", "Type disk 3", `
@@ -48,13 +51,18 @@ ForEach ($node in $nodes) {
             "Path disk 5", "Size (GB) disk 5", "Type disk 5", `
             "Path disk 6", "Size (GB) disk 6", "Type disk 6" 
 
-
         # inventory of VM
         $Data.Name = $VM.name
         $Data.State = $VM.state
         $Data.MemoryMB = $VM.MemoryStartup / 1024 /1024
         $Data.PathVM = $VM.Path
         $Data.CPUCount = $VM.ProcessorCount
+        $Data.Version = $VM.Version
+
+        # network data
+        $Data.NetworkSwitch = $VM.NetworkAdapters.SwitchName
+        $Data.NetworkStatus = $VM.NetworkAdapters.Status
+        $Data.NetworkVLANID = $VM.NetworkAdapters.vlansetting.AccessVlanId
     
         $VHDS = ForEach ($VMId IN $VM.VMId) {
             Get-VHD -ComputerName $node -VMID $VMId -ErrorAction SilentlyContinue
