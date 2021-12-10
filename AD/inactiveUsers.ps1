@@ -2,7 +2,7 @@
 # inactiveUsers.ps1 
 #
 # kontrola expirovanych hesel u uctu
-# Michal Weis Autocont(c) 2013
+# Michal Weis test(c) 2013
 
 Import-Module ActiveDirectory
 [threading.thread]::CurrentThread.CurrentCulture = 'en-US'
@@ -10,7 +10,7 @@ Import-Module ActiveDirectory
 # pocet mesicu 
 [int] $months = 2
 $from = "ad@aclab.cz"
-$to = "aaclab@autocont.cz"
+$to = "aaclab@test.cz"
 $SMTPServer = "pasvex01"
 $LDAPCesta = "DC=aclab,DC=local"
 

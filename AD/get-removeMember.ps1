@@ -23,7 +23,7 @@ Function Translate-SID
 
 $securityLog = Get-WinEvent 'ForwardedEvents' -FilterXPath "*[System[(EventID=4729 or EventID=4757 or EventID=4733)]]" -MaxEvents 1;
 
-$to = 'aaclab@autocont.cz';
+$to = 'aaclab@test.cz';
 $logArray = $securityLog.message.split("`n")
 
 $ADGroup = $logArray[14].Split("`t")[3].Trim()

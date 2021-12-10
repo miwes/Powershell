@@ -18,7 +18,7 @@ Param
 (
        [Parameter(Mandatory=$False)] [object]$SQLServer = @('PASVSQL01\SQL2005','PASVSQL01\SQL2008','PASVSQL01\SQL2012','AX2VAX2012R2\AX2VAX2012R2','PASVNAVSQL01\SQL2014'),
        [Parameter(Mandatory=$False)] [int]$day = 1,
-       [Parameter(Mandatory=$False)] [string]$mailTo = 'aaclab@autocont.cz',
+       [Parameter(Mandatory=$False)] [string]$mailTo = 'aaclab@test.cz',
        [Parameter(Mandatory=$False)] [string]$mailFrom = 'report@aclab.cz',
        [Parameter(Mandatory=$False)] [string]$SMTP = 'pasvex01'
        

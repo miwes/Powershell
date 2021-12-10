@@ -29,7 +29,7 @@ Function Translate-SID
 
 $securityLog = Get-WinEvent 'Security' -FilterXPath "*[System[(EventID=4728 or EventID=4756 or EventID=4732)]]" -MaxEvents 1;
 
-$to = 'michal.weis@autocont.cz';
+$to = 'michal.weis@test.cz';
 $logArray = $securityLog.message.split("`n")
 
 $ADGroup = $logArray[14].Split("`t")[3].Trim()

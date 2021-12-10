@@ -1,7 +1,7 @@
 Set-Culture "en-US"
 $securityLog = Get-WinEvent 'ForwardedEvents' -FilterXPath "*[System[(EventID=4726)]]" -MaxEvents 1;
 
-$to = 'aaclab@autocont.cz';
+$to = 'aaclab@test.cz';
 $logArray = $securityLog.message.split("`n")
 
 $deleteUser = $logArray[11].Split("`t")[3].Trim() + '\' + $logArray[10].Split("`t")[3].Trim()
