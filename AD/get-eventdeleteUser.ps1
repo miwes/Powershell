@@ -30,4 +30,4 @@ $sHTML += "</TABLE>"
 $sHTML += "</body>"
 
 
-Send-MailMessage -SmtpServer 'pasvex01.aclab.local' -From 'noretry@aclab.cz' -To $to -Body $sHTML -Subject $subject -BodyAsHtml
+Send-MailMessage -SmtpServer 'pasvex01' -From 'noretry@test.cz' -To $to -Body $sHTML -Subject $subject -BodyAsHtml
