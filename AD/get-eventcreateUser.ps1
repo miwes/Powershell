@@ -1,7 +1,7 @@
 Set-Culture "en-US"
 $securityLog = Get-WinEvent 'ForwardedEvents' -FilterXPath "*[System[(EventID=4720)]]" -MaxEvents 1;
 
-$to = 'aaclab@autocont.cz';
+$to = 'aaclab@test.cz';
 $logArray = $securityLog.message.split("`n")
 
 $createUser = $logArray[11].Split("`t")[3].Trim() + '\' + $logArray[10].Split("`t")[3].Trim()
@@ -28,4 +28,4 @@ $sHTML += "</TR>"
 $sHTML += "</TABLE>"
 $sHTML += "</body>"
 
-Send-MailMessage -SmtpServer 'pasvex01.aclab.local' -From 'noretry@aclab.cz' -To $to -Body $sHTML -Subject $subject -BodyAsHtml
+Send-MailMessage -SmtpServer 'pasvex01' -From 'noretry@test.cz' -To $to -Body $sHTML -Subject $subject -BodyAsHtml
