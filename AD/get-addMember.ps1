@@ -65,5 +65,5 @@ If ($ADGroup -like '*admin*')
 	$sHTML += "</TABLE>"
 	$sHTML += "</body>"
 
-	Send-MailMessage -SmtpServer 'KV-MGMT01.kkn.cz' -From 'noretry@kkn.cz' -To $to -Body $sHTML -Subject $subject -BodyAsHtml
+	Send-MailMessage -SmtpServer 'MGMT01.n.cz' -From 'noretry@n.cz' -To $to -Body $sHTML -Subject $subject -BodyAsHtml
 }
