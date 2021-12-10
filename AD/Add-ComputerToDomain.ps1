@@ -10,13 +10,13 @@ Author : Michal Weis
 #>
 
 [CmdletBinding()]Param (
-    [Parameter(Mandatory=$False,Position=8)] [Alias("VMName")] [string]$attrVMName = 'DPRDS01'
-    ,[Parameter(Mandatory=$False,Position=1)] [Alias("IP")] [string]$attrIP = '172.16.10.15'
-    ,[Parameter(Mandatory=$False,Position=2)] [Alias("GW")] [string]$attrGW = '172.16.0.1'
+    [Parameter(Mandatory=$False,Position=8)] [Alias("VMName")] [string]$attrVMName = 'server'
+    ,[Parameter(Mandatory=$False,Position=1)] [Alias("IP")] [string]$attrIP = '172.16.10.1'
+    ,[Parameter(Mandatory=$False,Position=2)] [Alias("GW")] [string]$attrGW = '172.16.10.2'
     ,[Parameter(Mandatory=$False,Position=3)] [Alias("NETMASK")] [string]$attrNetmask = 16
-    ,[Parameter(Mandatory=$False,Position=4)] [Alias("DNS")] [string]$attrDNS = ('192.168.169.12')
-    ,[Parameter(Mandatory=$False,Position=5)] [Alias("DomainName")] [string]$attrDomain = 'dpkv.local'
-    ,[Parameter(Mandatory=$False,Position=6)] [Alias("Account")] [string]$attrAccount = 'dpkv.local\autocont'
+    ,[Parameter(Mandatory=$False,Position=4)] [Alias("DNS")] [string]$attrDNS = ('172.16.10.132')
+    ,[Parameter(Mandatory=$False,Position=5)] [Alias("DomainName")] [string]$attrDomain = 'test.local'
+    ,[Parameter(Mandatory=$False,Position=6)] [Alias("Account")] [string]$attrAccount = 'test.local\domainjoin'
     ,[Parameter(Mandatory=$False,Position=7)] [Alias("LocalPassword")] [string]$attrLocalAccountPassword = 'Heslo12345'
 )
 
