@@ -9,8 +9,8 @@ Import-Module ActiveDirectory
 
 # pocet mesicu 
 [int] $months = 2
-$from = "ad@aclab.cz"
-$to = "aaclab@autocont.cz"
+$from = "ad@test.cz"
+$to = "aaclab@test.cz"
 $SMTPServer = "pasvex01"
 $LDAPCesta = "DC=aclab,DC=local"
 
