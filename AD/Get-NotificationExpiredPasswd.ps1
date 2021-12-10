@@ -23,8 +23,8 @@
 
 [CmdletBinding()]Param (
     [Parameter(Mandatory=$False,Position=1)] [Alias("WarningDay")] [System.Array]$attrWarningDay = @(30,20)
-    ,[Parameter(Mandatory=$False,Position=2)] [Alias("SMTPServer")] [String]$attrSMTP = 'ares.autocont.cz'
-    ,[Parameter(Mandatory=$False,Position=3)] [Alias("FromAddress")] [String]$attrFromAddress = 'weis@logon.cz'
+    ,[Parameter(Mandatory=$False,Position=2)] [Alias("SMTPServer")] [String]$attrSMTP = 'smtp.test.cz'
+    ,[Parameter(Mandatory=$False,Position=3)] [Alias("FromAddress")] [String]$attrFromAddress = 'weis@test.cz'
     ,[Parameter(Mandatory=$False,Position=4)] [Alias("DisplayNameFromAddress")] [String]$attrDisplayNameFromAddress = 'Upozorneni na expiraci hesla!'
     ,[Parameter(Mandatory=$False,Position=5)] [Alias("Subject")] [String]$attrSubject = 'Expirace hesla za {0} dni.'
     ,[Parameter(Mandatory=$False,Position=5)] [Alias("Body")] [String]$attrBody = "Vase heslo (uctu {0}) vyprsi dne {1}.<br><br>Nezapomente si ho zmenit.<br><br><B>IT</B>"
