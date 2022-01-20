@@ -1,0 +1,19 @@
+# zobrazni PSSession configuration
+Get-PSSessionConfiguration
+
+# vytvoreni nove definice
+New-PSSessionConfigurationFile -Path 'Zabbix.pssc' `
+-SessionType RestrictedRemoteServer `
+-LanguageMode NoLanguage `
+-ModulesToImport Hyper-V, Microsoft.PowerShell.Management `
+-VisibleCmdlets Get-VM `
+-VisibleFunctions Where-Object
+
+# regitrace + nastaveni prav (jedina nutna jsou Execute)
+Register-PSSessionConfiguration -Name ZabbixMonitoring -Path Zabbix.pssc -ShowSecurityDescriptorUI
+
+# zruseni
+UnRegister-PSSessionConfiguration -Name ZabbixMonitoring 
+
+# pripojeni se 
+Enter-PSSession -ComputerName 'localhost' -ConfigurationName ZabbixMonitoring
