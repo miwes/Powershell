@@ -19,7 +19,7 @@ Param
 (
        [Parameter(Mandatory=$False)] [string]$logPath = \\noman.loc\SYSVOL\noman.loc\scripts\update\log,
        [Parameter(Mandatory=$False)] [int]$day = 2,
-       [Parameter(Mandatory=$False)] [string]$mailTo = 'noman@noman.cz,noman2noman.cz',
+       [Parameter(Mandatory=$False)] [string]$mailTo = 'noman@noman.cz,noman@noman.cz',
        [Parameter(Mandatory=$False)] [string]$mailCc = 'it@noman.cz',
        [Parameter(Mandatory=$False)] [string]$mailFrom = 'update_serveru@noman.cz',
        [Parameter(Mandatory=$False)] [string]$SMTP = '192.168.131.4'
