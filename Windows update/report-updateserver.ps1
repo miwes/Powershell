@@ -177,9 +177,3 @@ Else
     $sSubject = "[Info] Report update serveru"
 }
 Send-Email -From $mailFrom -To $mailTo -Cc $mailCc -Subject $sSubject -Body $sHTML -SMTPServer $SMTP
-
-S pozdravem,
-
-Vladimír Pšenička
-AUTOCONT a.s.
-
