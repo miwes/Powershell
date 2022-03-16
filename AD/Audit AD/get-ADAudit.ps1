@@ -1,7 +1,8 @@
 <#
 .SYNOPSIS
     AD audit
-    Version : 1.0 - Init release
+    Version : 	1.0 - Init release
+    		1.1 - Add more security groups
 .DESCRIPTION
 .NOTES
 .LINK
@@ -27,17 +28,29 @@ Function Get-ADGroupMembers {
 	)
 	
 	$objects = @()
-	$members = Get-ADGroupMember -Identity $GroupName #| Where-Object objectClass -eq "group"
+    Try {
+	    $members = Get-ADGroupMember -Identity $GroupName 
+    } Catch {
+        Continue
+    }
 
     $Level += $GroupName + " -> "
-	foreach ($member in $members) {
+	ForEach ($member in $members) {
 
         If ($member.objectClass -eq 'group') {
             
-    	    $objects += Get-AdGroupMembers -GroupName $member.Name -Level $Level
+            Try {
+    	        $objects += Get-AdGroupMembers -GroupName $member.Name -Level $Level
+            } Catch {
+                Continue
+            }
         } Else {
             
-            $User = Get-ADUser $member			
+            Try {
+                $User = Get-ADObject $member		
+            } Catch {
+                Continue
+            }
 
             $LevelTree = $Level.Substring(0,$Level.Length -3)	
 		    $objects += @{
@@ -72,7 +85,8 @@ Function Get-ReportADGroup {
         $htmlReport += "<tr><th colspan='3'>Group - $group</th><tr>"
         $htmlReport += "<tr><th>Member</th><th>Enabled</th><th>From</th><tr>"
     
-        $Accounts = Get-ADGroupMembers -groupName $group 
+        Write-Verbose "Get members of $group ...."
+        $Accounts = Get-ADGroupMembers -groupName $group
     
         ForEach ($Account In $Accounts) {
             $htmlReport += "<tr>"
@@ -164,13 +178,16 @@ $htmlReport += "</head>"
 $htmlReport += "<body>"
 
 # reporty
+Write-Verbose "AD group..."
 $htmlReport += "<hr><h2>AD group</h2>"
 $htmlReport += "<a href='https://docs.microsoft.com/en-us/windows/security/identity-protection/access-control/active-directory-security-groups'>link</a>"
 $htmlReport += Get-ReportADGroup
 
+Write-Verbose "Default administrator..."
 $htmlReport += "<hr><h2>Default administrator</h2>"
 $htmlReport += Get-DomainAdminAccount
 
+Write-Verbose "Password policy..."
 $htmlReport += "<hr><h2>Password policy</h2>"
 $htmlReport += Get-PasswordPolicy 
 
