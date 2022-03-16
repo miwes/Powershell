@@ -47,7 +47,15 @@ Function Get-ADGroupMembers {
         } Else {
             
             Try {
-                $User = Get-ADObject $member		
+                $User = Get-ADObject $member -Properties enabled		
+                
+                $enabled = ''
+                If ( $User.objectclass -eq "user") {
+                    $enabled = (Get-AdUser $member).enabled
+                } ElseIf ( $User.objectclass -eq "computer") {
+                    $enabled = (Get-ADComputer $member).enabled
+                } 
+
             } Catch {
                 Continue
             }
@@ -58,7 +66,7 @@ Function Get-ADGroupMembers {
 			    "type"   = $member.objectClass;
 			    "name"   = $member.Name;
 			    "group"  = $GroupName
-                "status" = $user.enabled
+                "status" = $enabled
             }
 		  
         }
