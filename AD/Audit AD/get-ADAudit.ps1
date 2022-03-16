@@ -165,6 +165,7 @@ $htmlReport += "<body>"
 
 # reporty
 $htmlReport += "<hr><h2>AD group</h2>"
+$htmlReport += "<a href='https://docs.microsoft.com/en-us/windows/security/identity-protection/access-control/active-directory-security-groups'>link</a>"
 $htmlReport += Get-ReportADGroup
 
 $htmlReport += "<hr><h2>Default administrator</h2>"
