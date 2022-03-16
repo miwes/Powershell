@@ -58,7 +58,7 @@ Function Get-ADGroupMembers {
 
 Function Get-ReportADGroup {
     # find PrivilegedGroupAccounts
-    $ADGroup = @('Administrators','Domain Admins','Enterprise Admins','Schema Admins','Protected Users')
+    $ADGroup = @('Administrators','Domain Admins','Enterprise Admins','Schema Admins','Protected Users','Account Operators','Allowed RODC Password Replication Group','Backup Operators','Certificate Service DCOM Access','Cert Publishers','Cloneable Domain Controllers','Cryptographic Operators','Denied RODC Password Replication Group','Distributed COM Users','DnsUpdateProxy','DnsAdmins','Domain Controllers','Enterprise Key Admins','Key Admins','Enterprise Read-Only Domain Controllers','Event Log Readers','Group Policy Creator Owners','Hyper-V Administrators','IIS_IUSRS','Network Configuration Operators','Pre–Windows 2000 Compatible Access','Print Operators','RAS and IAS Servers','Remote Management Users','Replicator','Server Operators')
 
     $htmlReport = ''
     $htmlReport += "<style>BODY{font-family: Arial; font-size: 8pt;}"
