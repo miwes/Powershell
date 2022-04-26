@@ -257,8 +257,7 @@ $htmlReport += "<body>"
 Write-Verbose "AD group..."
 $htmlReport += "<hr><h2>AD group</h2>"
 $htmlReport += "<a href='https://docs.microsoft.com/en-us/windows/security/identity-protection/access-control/active-directory-security-groups'>link</a>"
-#$htmlReport += Get-ReportADGroup
-
+$htmlReport += Get-ReportADGroup
 
 Write-Verbose "Admin SD Holder ..."
 $htmlReport += "<hr><h2>Admin SD Holder</h2>"
