@@ -1,5 +1,5 @@
 [CmdletBinding()]Param (
-    [Parameter(Mandatory=$False)] [Alias("ConfigFile")] [string]$attrDC
+	[Parameter(Mandatory=$False)] [string]$attrDC
 )
 
 
