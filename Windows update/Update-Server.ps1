@@ -4,7 +4,7 @@
 .DESCRIPTION 
 .NOTES 
     Author     : Michal Weis
-    Version    : 1.0
+    Version    : 1.5.1
                  1.1   - split function
                  1.2   - Add comments, add argument IsAssigned=1
                  1.3   - Change info, add logging, automatic reboot choice
@@ -12,6 +12,7 @@
                  1.4.1 - Add log record when start script 
                  1.4.2 - Change error log file
 		 1.4.3 - fix some errors
+		 1.5.1 - fix errors
 .LINK 
 .EXAMPLE 
     .\update-Server.ps1

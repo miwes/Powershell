@@ -4,9 +4,10 @@
 .DESCRIPTION 
 .NOTES 
     Author     : Michal Weis
-    Version    : 1.2
+    Version    : 1.3
         - 1.1 - add info report - cannot find any report logs
         - 1.2 - add Reboot column, change color
+        - 1.3 - add mail CC
 
 .LINK 
 .EXAMPLE 
@@ -16,11 +17,12 @@
 [CmdletBinding()]
 Param
 (
-       [Parameter(Mandatory=$False)] [string]$logPath = "\\test.ext\SYSVOL\test.ext\scripts\logs",
-       [Parameter(Mandatory=$False)] [int]$day = 4,
-       [Parameter(Mandatory=$False)] [string]$mailTo = 'testSpravci@test.cz',
-       [Parameter(Mandatory=$False)] [string]$mailFrom = 'noreply@test.cz',
-       [Parameter(Mandatory=$False)] [string]$SMTP = '192.168.223.15'
+       [Parameter(Mandatory=$False)] [string]$logPath = \\noman.loc\SYSVOL\noman.loc\scripts\update\log,
+       [Parameter(Mandatory=$False)] [int]$day = 2,
+       [Parameter(Mandatory=$False)] [string]$mailTo = 'noman@noman.cz,noman@noman.cz',
+       [Parameter(Mandatory=$False)] [string]$mailCc = 'it@noman.cz',
+       [Parameter(Mandatory=$False)] [string]$mailFrom = 'update_serveru@noman.cz',
+       [Parameter(Mandatory=$False)] [string]$SMTP = '192.168.131.4'
        
 )
 
@@ -88,7 +90,7 @@ Function Get-HtmlReport
     $sHTML += "TD{border: 1px solid black; padding: 5px; }"
     $sHTML +=  "</style>"    
     $SHTML += "<body>"
-    $sHTML += "<h3><Font face='Arial'>Report install updatu serveru testEXT: $fromDate</font></h3>"
+    $sHTML += "<h3><Font face='Arial'>Report install updatu server: $fromDate - $toDate</font></h3>"
     $sHTML += "<hr>"
     $sHTML += "<TABLE style='font-weight:normal; border-collapse: collapse'>"
     $SHTML += "<TR style='font-family:Arial'>
@@ -137,14 +139,16 @@ Function Send-Email
 {
     Param
     (
-	    [Parameter(Mandatory=$True,Position=1)] [string]$From,
+                   [Parameter(Mandatory=$True,Position=1)] [string]$From,
         [Parameter(Mandatory=$True,Position=2)] [string]$To,
-        [Parameter(Mandatory=$True,Position=3)] [string]$Subject,
-        [Parameter(Mandatory=$True,Position=4)] [string]$Body,
-        [Parameter(Mandatory=$True,Position=5)] [string]$SMTPServer
+        [Parameter(Mandatory=$True,Position=3)] [string]$Cc,
+        [Parameter(Mandatory=$True,Position=4)] [string]$Subject,
+        [Parameter(Mandatory=$True,Position=5)] [string]$Body,
+        [Parameter(Mandatory=$True,Position=6)] [string]$SMTPServer
     )
 
     $message = New-Object System.Net.Mail.MailMessage $from, $to
+    $message.cc.Add($cc)
     $message.Subject = $subject
     $message.IsBodyHtml = $true
     $message.Body = $body
@@ -160,11 +164,11 @@ If ($file.Count -ne 0)
     $sHTML= Get-HtmlReport -Data $logData  -Day $day
     If (($logData | group-object status | Where {$_.name -eq 'error'} | Select -ExpandProperty Count) -gt 0)
     {
-        $sSubject = "[Error] Report update serveru testEXT: $($file.Count) server(s)"
+        $sSubject = "[Error] Report update serveru : $($file.Count) server(s)"
     }
     Else
     {
-        $sSubject = "[Success] Report update serveru testEXT: $($file.Count) server(s)"    
+        $sSubject = "[Success] Report update serveru : $($file.Count) server(s)"    
     }
 }
 Else 
@@ -172,4 +176,4 @@ Else
     $sHTML = "Cannot find any report logs." 
     $sSubject = "[Info] Report update serveru"
 }
-Send-Email -From $mailFrom -To $mailTo -Subject $sSubject -Body $sHTML -SMTPServer $SMTP
+Send-Email -From $mailFrom -To $mailTo -Cc $mailCc -Subject $sSubject -Body $sHTML -SMTPServer $SMTP
