@@ -185,7 +185,6 @@ Function Get-AdminSDHolder {
                 
                     $enabled = ''
                     $enabled = (Get-AdUser $user).enabled
-                    write-host (Get-AdUser $user).enabled
 
                     $lastLogon = ''
                     $lastLogon = (Get-AdUser $user -properties lastlogondate).lastlogondate
