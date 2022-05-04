@@ -1,15 +1,14 @@
 <#
 .SYNOPSIS
     AD audit
-    Version : 	1.0 - Init release
-    		1.1 - Add more security groups
+    Version : 	
+        1.0 - Init release
+    	1.1 - Add more security groups
 		1.2 - Add AdminSDHolder
+        1.3 - Add Audit policy
 .DESCRIPTION
 .NOTES
 .LINK
-.EXAMPLE
-.PARAMETER foo
-.PARAMETER bar
 #>
 
 <# TODO
@@ -205,6 +204,156 @@ Function Get-AdminSDHolder {
 
 }
 
+Function Get-ADAuditPolicy {
+
+$AuditPolicyReader = Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+using System.Text;
+using System.Linq;
+using System.Collections.Generic;
+
+public class AuditPolicyReader
+{
+    [Flags()]
+    public enum AuditPolicySetting
+    {
+        Unknown =  -1,
+        None    = 0x0,
+        Success = 0x1,
+        Failure = 0x2
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct LSA_UNICODE_STRING
+    {
+        public UInt16 Length;
+        public UInt16 MaximumLength;
+        public IntPtr Buffer;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct LSA_OBJECT_ATTRIBUTES
+    {
+        public int Length;
+        public IntPtr RootDirectory;
+        public LSA_UNICODE_STRING ObjectName;
+        public UInt32 Attributes;
+        public IntPtr SecurityDescriptor;
+        public IntPtr SecurityQualityOfService;
+    }
+
+    public struct POLICY_AUDIT_EVENTS_INFO
+    {
+        public bool AuditingMode;
+        public IntPtr EventAuditingOptions;
+        public Int32 MaximumAuditEventCount;
+    }
+
+    [DllImport("advapi32.dll")]
+    static extern uint LsaQueryInformationPolicy(IntPtr PolicyHandle, uint InformationClass, out IntPtr Buffer);
+
+    [DllImport("advapi32.dll", SetLastError = true, PreserveSig = true)]
+    static extern uint LsaOpenPolicy(ref LSA_UNICODE_STRING SystemName, ref LSA_OBJECT_ATTRIBUTES ObjectAttributes, uint DesiredAccess, out IntPtr PolicyHandle);
+
+    [DllImport("advapi32.dll", SetLastError = true)]
+    static extern uint LsaClose(IntPtr ObjectHandle);
+
+    public static Dictionary<string, AuditPolicySetting> GetClassicAuditPolicy()
+    {
+        // Create dictionary to hold the audit policy settings (the key order here is important!!!)
+        var settings = new Dictionary<string, AuditPolicySetting>
+        {
+            {"System", AuditPolicySetting.Unknown},
+            {"Logon", AuditPolicySetting.Unknown},
+            {"Object Access", AuditPolicySetting.Unknown},
+            {"Privilige Use", AuditPolicySetting.Unknown},
+            {"Detailed Tracking", AuditPolicySetting.Unknown},
+            {"Policy Change", AuditPolicySetting.Unknown},
+            {"Account Management", AuditPolicySetting.Unknown},
+            {"Directory Service Access", AuditPolicySetting.Unknown},
+            {"Account Logon", AuditPolicySetting.Unknown},
+        };
+
+        // Open local machine security policy
+        IntPtr polHandle;
+        LSA_OBJECT_ATTRIBUTES aObjectAttributes = new LSA_OBJECT_ATTRIBUTES();
+        aObjectAttributes.Length = 0;
+        aObjectAttributes.RootDirectory = IntPtr.Zero;
+        aObjectAttributes.Attributes = 0;
+        aObjectAttributes.SecurityDescriptor = IntPtr.Zero;
+        aObjectAttributes.SecurityQualityOfService = IntPtr.Zero;
+
+        var systemName = new LSA_UNICODE_STRING();
+        uint desiredAccess = 2; // we only need the audit policy, no need to request anything else
+        var res = LsaOpenPolicy(ref systemName, ref aObjectAttributes, desiredAccess, out polHandle);
+        if (res != 0)
+        {
+            if(res == 0xC0000022)
+            {
+                // Access denied, needs to run as admin
+                throw new UnauthorizedAccessException("Failed to open LSA policy because of insufficient access rights");
+            }
+            throw new Exception(string.Format("Failed to open LSA policy with return code '0x{0:X8}'", res));
+        }
+        try
+        {
+            // now that we have a valid policy handle, we can query the settings of the audit policy
+            IntPtr outBuffer;
+            uint policyType = 2; // this will return information about the audit settings
+            res = LsaQueryInformationPolicy(polHandle, policyType, out outBuffer);
+            if (res != 0)
+            {
+                throw new Exception(string.Format("Failed to query LSA policy information with '0x{0:X8}'", res));
+            }
+
+            // copy the raw values returned by LsaQueryPolicyInformation() to a local array;
+            var auditEventsInfo = Marshal.PtrToStructure<POLICY_AUDIT_EVENTS_INFO>(outBuffer);
+            var values = new int[auditEventsInfo.MaximumAuditEventCount];                
+            Marshal.Copy(auditEventsInfo.EventAuditingOptions, values, 0, auditEventsInfo.MaximumAuditEventCount);
+
+            // now we just need to translate the provided values into our settings dictionary
+            var categoryIndex = settings.Keys.ToArray();
+            for (int i = 0; i < values.Length; i++)
+            {
+                settings[categoryIndex[i]] = (AuditPolicySetting)values[i];
+            }
+
+            return settings;
+        }
+        finally
+        {
+            // remember to release policy handle
+            LsaClose(polHandle);
+        }
+    }
+}
+'@ -PassThru | Where-Object Name -eq AuditPolicyReader
+    $auditPolicy = $AuditPolicyReader::GetClassicAuditPolicy()
+    
+    $htmlReport = ''
+    $htmlReport += "<style>BODY{font-family: Arial; font-size: 8pt;}"
+    $htmlReport += "TABLE{border: 1px solid black; border-collapse: collapse;}"
+    $htmlReport += "TH{border: 1px solid black; background: #dddddd; padding: 2px; }"
+    $htmlReport += "TD{border: 1px solid black; padding: 2px; }"
+    $htmlReport +=  "</style>"   
+
+    $htmlReport += "<table width=800>"
+    $htmlReport += "<tr><th colspan='4'>Audit policy</th><tr>"
+    $htmlReport += "<tr><th>Audit</th><th>Settings</th><tr>"
+ 
+    ForEach ($policy In $auditPolicy.Keys) {
+        
+        $htmlReport += "<tr>"
+        $htmlReport += "<td>$policy</td><td>$($auditPolicy.$policy)</td>"
+        $htmlReport += "</tr>"
+    }
+    
+    $htmlReport += '</table><br />'
+    Return $htmlReport
+
+}
+
 #endfunction
 
 $cssStyle = "
@@ -250,7 +399,6 @@ $htmlReport += "</head>"
 $htmlReport += "<body>"
 
 # reporty
-
 Write-Verbose "AD group..."
 $htmlReport += "<hr><h2>AD group</h2>"
 $htmlReport += "<a href='https://docs.microsoft.com/en-us/windows/security/identity-protection/access-control/active-directory-security-groups'>link</a>"
@@ -267,6 +415,10 @@ $htmlReport += Get-DomainAdminAccount
 Write-Verbose "Password policy..."
 $htmlReport += "<hr><h2>Password policy</h2>"
 $htmlReport += Get-PasswordPolicy 
+
+Write-Verbose "Audit policy..."
+$htmlReport += "<hr><h2>Audit policy</h2>"
+$htmlReport += Get-ADAuditPolicy
 
 $htmlReport += "</body>"
 $htmlReport += "</html>"
