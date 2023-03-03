@@ -12,6 +12,8 @@ New-PSSessionConfigurationFile -Path 'Zabbix.pssc' `
 # regitrace + nastaveni prav (jedina nutna jsou Execute)
 Register-PSSessionConfiguration -Name ZabbixMonitoring -Path Zabbix.pssc -ShowSecurityDescriptorUI
 
+# po registraci je nutne restartovat WS management
+
 # zruseni
 UnRegister-PSSessionConfiguration -Name ZabbixMonitoring 
 
