@@ -65,7 +65,8 @@ Function Send-Email () {
 
 # search user from current AD
 $oSearcher = New-Object System.DirectoryServices.DirectorySearcher
-$oSearcher.filter = "(&(objectCategory=person)(objectClass=user)(!userAccountControl:1.2.840.113556.1.4.803:=65536))"
+# all not disable user with no password never expire
+$oSearcher.filter = "(&(objectCategory=person)(objectClass=user)(!userAccountControl:1.2.840.113556.1.4.803:=65536)(!userAccountControl:1.2.840.113556.1.4.803:=2))"
 [void]$oSearcher.PropertiesToLoad.Add("CN")
 [void]$oSearcher.PropertiesToLoad.Add("mail")
 [void]$oSearcher.PropertiesToLoad.Add("msDS-UserPasswordExpiryTimeComputed")
