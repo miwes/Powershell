@@ -1,5 +1,5 @@
 [CmdletBinding()]Param (
-    [Parameter(Mandatory=$True,Position=1)] [Alias("Server")] [string]$attrServer
+    [Parameter(Mandatory=$True,Position=1,ValueFromPipeline=$True)] [Alias("Server")] [string]$attrServer
 )
 
 $oldDNS = ("172.30.100.11", "172.30.100.12")
