@@ -6,6 +6,7 @@
     	1.1 - Add more security groups
 		1.2 - Add AdminSDHolder
         1.3 - Add Audit policy
+        1.4 - add empty password, never expires
 .DESCRIPTION
 .NOTES
 .LINK
@@ -89,7 +90,7 @@ Function Get-ADGroupMembers {
 
 Function Get-ReportADGroup {
     # find PrivilegedGroupAccounts
-    $ADGroup = @('Administrators','Domain Admins','Enterprise Admins','Schema Admins','Protected Users','Account Operators','Allowed RODC Password Replication Group','Backup Operators','Certificate Service DCOM Access','Cert Publishers','Cloneable Domain Controllers','Cryptographic Operators','Denied RODC Password Replication Group','Distributed COM Users','DnsUpdateProxy','DnsAdmins','Domain Controllers','Enterprise Key Admins','Key Admins','Enterprise Read-Only Domain Controllers','Event Log Readers','Group Policy Creator Owners','Hyper-V Administrators','IIS_IUSRS','Network Configuration Operators','Pre–Windows 2000 Compatible Access','Print Operators','RAS and IAS Servers','Remote Management Users','Replicator','Server Operators')
+    $ADGroup = @('Administrators','Domain Admins','Enterprise Admins','Schema Admins','Protected Users','Account Operators','Backup Operators','DnsAdmins','Domain Controllers','Enterprise Key Admins','Key Admins','Group Policy Creator Owners','Hyper-V Administrators','PreWindows 2000 Compatible Access','Print Operators')
 
     $htmlReport = ''
     $htmlReport += "<style>BODY{font-family: Arial; font-size: 8pt;}"
@@ -354,6 +355,84 @@ public class AuditPolicyReader
 
 }
 
+Function Get-NeverExpiresPassword {
+    
+    
+    $users = Get-ADUser -filter * -properties Name, PasswordNeverExpires | where {$_.passwordNeverExpires -eq "true" }
+
+    $htmlReport = ''
+    $htmlReport += "<style>BODY{font-family: Arial; font-size: 8pt;}"
+    $htmlReport += "TABLE{border: 1px solid black; border-collapse: collapse;}"
+    $htmlReport += "TH{border: 1px solid black; background: #dddddd; padding: 2px; }"
+    $htmlReport += "TD{border: 1px solid black; padding: 2px; }"
+    $htmlReport +=  "</style>"   
+
+    $htmlReport += "<table width=800>"
+    $htmlReport += "<tr><th colspan='4'>Account with a password which never expires</th><tr>"
+    $htmlReport += "<tr><th>Account</th><th>Enabled</th><th>Last logon</th><th>Path</th><tr>"
+    
+    ForEach ($user In $users) {
+        Try {
+                
+            $enabled = ''
+            $enabled = (Get-AdUser $user).enabled
+
+            $lastLogon = ''
+            $lastLogon = (Get-AdUser $user -properties lastlogondate).lastlogondate
+
+        } Catch {
+            Continue
+        }
+
+        $htmlReport += "<tr>"
+        $htmlReport += "<td>$($user.name)</td><td>$enabled</td><td>$lastLogon</td><td>$($user.distinguishedName)</td>"
+        $htmlReport += "</tr>"
+     }
+    
+
+    $htmlReport += '</table><br />'
+    Return $htmlReport  
+}
+
+Function Get-CanEmptyPassword {
+    
+    
+    $users = Get-ADUser -Filter {PasswordNotRequired -eq $true}
+
+    $htmlReport = ''
+    $htmlReport += "<style>BODY{font-family: Arial; font-size: 8pt;}"
+    $htmlReport += "TABLE{border: 1px solid black; border-collapse: collapse;}"
+    $htmlReport += "TH{border: 1px solid black; background: #dddddd; padding: 2px; }"
+    $htmlReport += "TD{border: 1px solid black; padding: 2px; }"
+    $htmlReport +=  "</style>"   
+
+    $htmlReport += "<table width=800>"
+    $htmlReport += "<tr><th colspan='4'>Account which can have an empty password - userAccountControl PASSWD_NOTREQD</th><tr>"
+    $htmlReport += "<tr><th>Account</th><th>Enabled</th><th>Last logon</th><th>Path</th><tr>"
+    
+    ForEach ($user In $users) {
+        Try {
+                
+            $enabled = ''
+            $enabled = (Get-AdUser $user).enabled
+
+            $lastLogon = ''
+            $lastLogon = (Get-AdUser $user -properties lastlogondate).lastlogondate
+
+        } Catch {
+            Continue
+        }
+
+        $htmlReport += "<tr>"
+        $htmlReport += "<td>$($user.name)</td><td>$enabled</td><td>$lastLogon</td><td>$($user.distinguishedName)</td>"
+        $htmlReport += "</tr>"
+     }
+    
+
+    $htmlReport += '</table><br />'
+    Return $htmlReport  
+}
+
 #endfunction
 
 $cssStyle = "
@@ -419,6 +498,15 @@ $htmlReport += Get-PasswordPolicy
 Write-Verbose "Audit policy..."
 $htmlReport += "<hr><h2>Audit policy</h2>"
 $htmlReport += Get-ADAuditPolicy
+
+Write-Verbose "Account never expires ..."
+$htmlReport += "<hr><h2>Account never expires</h2>"
+$htmlReport += Get-NeverExpiresPassword
+
+Write-Verbose "Account which can have an empty password ..."
+$htmlReport += "<hr><h2>Account which can have an empty password</h2>"
+$htmlReport += Get-CanEmptyPassword
+
 
 $htmlReport += "</body>"
 $htmlReport += "</html>"
