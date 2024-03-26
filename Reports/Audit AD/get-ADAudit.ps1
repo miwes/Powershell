@@ -497,7 +497,11 @@ $htmlReport += Get-PasswordPolicy
 
 Write-Verbose "Audit policy..."
 $htmlReport += "<hr><h2>Audit policy</h2>"
-$htmlReport += Get-ADAuditPolicy
+Try {
+    $htmlReport += Get-ADAuditPolicy
+} Catch {
+    
+}
 
 Write-Verbose "Account never expires ..."
 $htmlReport += "<hr><h2>Account never expires</h2>"
