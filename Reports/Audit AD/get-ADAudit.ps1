@@ -7,6 +7,8 @@
 		1.2 - Add AdminSDHolder
         1.3 - Add Audit policy
         1.4 - add empty password, never expires
+        1.5 - add more functions from ARICOMA Security Audits
+
 .DESCRIPTION
 .NOTES
 .LINK
@@ -122,7 +124,9 @@ Function Get-DomainAdminAccount {
     $ReturnValue = ''
     
     $AdministratorSID = ((Get-ADDomain -Current LoggedOnUser).domainsid.value)+"-500"
-    $AdministratorSAMAccountName = (Get-ADUser -Filter {SID -eq $AdministratorSID} -properties SamAccountName).SamAccountName
+    $AdministratorObject = Get-ADUser -Filter {SID -eq $AdministratorSID} -properties SamAccountName, enabled
+    $AdministratorSAMAccountName = $AdministratorObject.SamAccountName
+    $AdministratorSAMAccountNameStatus = $AdministratorObject.enabled
     
     if ($AdministratorSAMAccountName -eq "Administrator"){
        $ReturnValue += "<li>Local Administrator account (UID500) has not been renamed</li>"
@@ -133,6 +137,7 @@ Function Get-DomainAdminAccount {
 
     $AdministratorLastLogonDate =  (Get-ADUser -Filter {SID -eq $AdministratorSID}  -properties lastlogondate).lastlogondate
     $ReturnValue += "<li>$AdministratorSAMAccountName last used $AdministratorLastLogonDate.</li>"
+    $ReturnValue += "<li>$AdministratorSAMAccountName enabled = $AdministratorSAMAccountNameStatus.</li>"
 
     Return $ReturnValue
 }
@@ -206,6 +211,36 @@ Function Get-AdminSDHolder {
 }
 
 Function Get-ADAuditPolicy {
+    $auditSettings = auditpol /get /category:* /r | ConvertFrom-Csv
+    
+    $auditSettings = $auditSettings | Sort-Object Subcategory
+
+    $htmlReport = ''
+    $htmlReport += "<style>BODY{font-family: Arial; font-size: 8pt;}"
+    $htmlReport += "TABLE{border: 1px solid black; border-collapse: collapse;}"
+    $htmlReport += "TH{border: 1px solid black; background: #dddddd; padding: 2px; }"
+    $htmlReport += "TD{border: 1px solid black; padding: 2px; }"
+    $htmlReport += "</style>"
+
+    $htmlReport += "<table width=800>"
+    $htmlReport += "<tr><th>Category</th><th>Settings</th></tr>"
+
+    ForEach ($setting In $auditSettings) {
+        $subcategory = $setting.Subcategory
+        $settingValue = $setting.'Inclusion Setting'
+        
+        if($setting.'Inclusion Setting' -ne 'No Auditing') {
+            $htmlReport += "<tr>"
+            $htmlReport += "<td>$subcategory</td><td>$settingValue</td>"
+            $htmlReport += "</tr>"
+        }
+    }
+
+    $htmlReport += '</table><br />'
+    Return $htmlReport
+}
+
+Function Get-ADClassicAuditPolicy {
 
 $AuditPolicyReader = Add-Type -TypeDefinition @'
 using System;
@@ -433,6 +468,192 @@ Function Get-CanEmptyPassword {
     Return $htmlReport  
 }
 
+Function Get-Krbtgt {
+    $krbtgt = Get-ADUser "krbtgt" -Property Created, PasswordLastSet
+    $ReturnValue += "<li>KRBTG last password set $($krbtgt.PasswordLastSet)</li>"
+
+    Return $ReturnValue
+}
+
+Function Get-LastLogonObject {
+ 
+    $threeMonthsAgo = (Get-Date).AddMonths(-3)
+    $users= Get-ADUser -filter * -properties Name, LastLogonDate | where {$_.LastLogonDate -lt $threeMonthsAgo}
+    
+
+    $htmlReport = ''
+    $htmlReport += "<style>BODY{font-family: Arial; font-size: 8pt;}"
+    $htmlReport += "TABLE{border: 1px solid black; border-collapse: collapse;}"
+    $htmlReport += "TH{border: 1px solid black; background: #dddddd; padding: 2px; }"
+    $htmlReport += "TD{border: 1px solid black; padding: 2px; }"
+    $htmlReport +=  "</style>"   
+
+    $htmlReport += "<table width=800>"
+    $htmlReport += "<tr><th colspan='4'>Account with a password which never expires</th><tr>"
+    $htmlReport += "<tr><th>Account</th><th>Enabled</th><th>Last logon</th><th>Path</th><tr>"
+    
+    $users = $users | Sort-Object lastlogondate
+
+    ForEach ($user In $users) {
+        Try {
+                
+            $enabled = ''
+            $enabled = (Get-AdUser $user).enabled
+
+            $lastLogon = ''
+            $lastLogon = (Get-AdUser $user -properties lastlogondate).lastlogondate
+
+        } Catch {
+            Continue
+        }
+
+        $htmlReport += "<tr>"
+        $htmlReport += "<td>$($user.name)</td><td>$enabled</td><td>$lastLogon</td><td>$($user.distinguishedName)</td>"
+        $htmlReport += "</tr>"
+     }
+    
+
+    $htmlReport += '</table><br />'
+    Return $htmlReport  
+}
+
+Function Get-WindowsUpToDate {
+
+
+    # Získání seznamu nainstalovaných aktualizací
+    $updates = Get-HotFix
+
+    # Počet aktualizací k instalaci
+    $updatesCount = (New-Object -ComObject Microsoft.Update.Session).CreateUpdateSearcher().Search("IsInstalled=0").Updates.Count
+
+    # Datum poslední aktualizace
+    $lastUpdateDate = $updates | Sort-Object -Property InstalledOn -Descending | Select-Object -First 1 -Property InstalledOn
+
+    
+    # Zjištění zda jsou aktualizace řízené z WSUS nebo přímo z MS serverů
+    $wsusServer = (Get-ItemProperty -Path "HKLM:\\Software\\Policies\\Microsoft\\Windows\\WindowsUpdate").WUServer
+
+    if ($wsusServer) {
+        $updateSource = "<li>Updates are managed by WSUS server: $wsusServer</li>"
+    } else {
+        $updateSource = "<li>Updates are managed directly from Microsoft servers</li>"
+    }
+
+
+    $ReturnValue += "<li>Number of updates for installation: $updatesCount</li>"
+    $ReturnValue += "<li>Date of the last update: $($lastUpdateDate.InstalledOn)</li>"
+    $ReturnValue += $updateSource
+
+    Return $ReturnValue
+
+}
+
+Function Get-LogsSize {
+
+    $systemLog = Get-WinEvent -ListLog System
+    $systemLogSize = $systemLog.MaximumSizeInBytes / 1KB
+
+    $securityLog = Get-WinEvent -ListLog Security
+    $securityLogSize = $securityLog.MaximumSizeInBytes / 1KB
+
+    $ReturnValue += "<li>System Event Log Size: $systemLogSize KB</li>"
+    $ReturnValue += "<li>Security Event Log Size: $securityLogSize KB</li>"
+
+    Return $ReturnValue
+
+}
+
+Function Get-FirewallStatus {
+    # Získání stavu firewallu pro všechny profily
+    $firewallStatus = Get-NetFirewallProfile -Profile Domain,Public,Private | Select-Object -Property Name, Enabled
+
+    # Kontrola, zda je firewall řízen pomocí GPO
+    $gpoStatus = Get-ItemProperty -Path "HKLM:\Software\Policies\Microsoft\WindowsFirewall" -ErrorAction SilentlyContinue
+
+    $isManagedByGPO = $false
+    if ($gpoStatus) {
+        $isManagedByGPO = $true
+    }
+
+  
+    $htmlReport = ''
+    $htmlReport += "<style>BODY{font-family: Arial; font-size: 8pt;}"
+    $htmlReport += "TABLE{border: 1px solid black; border-collapse: collapse;}"
+    $htmlReport += "TH{border: 1px solid black; background: #dddddd; padding: 2px; }"
+    $htmlReport += "TD{border: 1px solid black; padding: 2px; }"
+    $htmlReport +=  "</style>"   
+
+    $htmlReport += "<table width=800>"
+    foreach ($profile in $firewallStatus) {
+        $htmlReport += "<tr><td>$($profile.Name)</td><td>$($profile.Enabled)</td></tr>"
+    }
+    $htmlReport += "</table>"
+
+    $htmlReport += "<li> Is Managed by GPO: $isManagedByGPO</li>"
+
+    Return $htmlReport
+}
+
+Function Get-SMB1Status {
+    # Získání stavu SMB1
+    $smb1Status = Get-SMBServerConfiguration | Select EnableSMB1Protocol
+
+    # Vytvoření HTML reportu
+    $htmlReport = @"
+
+    <style>
+        BODY {font-family: Arial; font-size: 10pt;}
+        TABLE {border: 1px solid black; border-collapse: collapse; width: 100%;}
+        TH {border: 1px solid black; background: #dddddd; padding: 5px;}
+        TD {border: 1px solid black; padding: 5px;}
+    </style>
+    <table>
+        <tr><th>Feature Name</th><th>Status</th></tr>
+"@
+
+    # Přidání stavu SMB1 do HTML reportu
+    $htmlReport += "<tr><td>SMB1</td><td>$($smb1Status.EnableSMB1Protocol)</td></tr>"
+    $htmlReport += "</table>"
+
+
+    # Vrácení HTML reportu
+    return $htmlReport
+}
+
+Function Get-SpoolerStatus {
+    # Získání stavu služby Spooler
+    $spoolerStatus = Get-Service -Name Spooler | Select-Object -Property Name, Status
+
+    # Kontrola, zda je služba Spooler zakázána pomocí GPO
+    $gpoStatus = Get-ItemProperty -Path "HKLM:\Software\Policies\Microsoft\Windows NT\Printers" -Name "DisableSpooler" -ErrorAction SilentlyContinue
+
+    $isDisabledByGPO = $false
+    if ($gpoStatus -and $gpoStatus.DisableSpooler -eq 1) {
+        $isDisabledByGPO = $true
+    }
+
+    # Vytvoření HTML reportu
+    $htmlReport = @"
+    <style>
+        BODY {font-family: Arial; font-size: 10pt;}
+        TABLE {border: 1px solid black; border-collapse: collapse; width: 100%;}
+        TH {border: 1px solid black; background: #dddddd; padding: 5px;}
+        TD {border: 1px solid black; padding: 5px;}
+    </style>
+    <table>
+        <tr><th>Service Name</th><th>Status</th></tr>
+"@
+
+    # Přidání stavu služby Spooler do HTML reportu
+    $htmlReport += "<tr><td>$($spoolerStatus.Name)</td><td>$($spoolerStatus.Status)</td></tr>"
+    $htmlReport += "</table>"
+    $htmlReport += "<h3>Disabled by GPO: $isDisabledByGPO</h3>"
+    $htmlReport += "</body></html>"
+
+    # Vrácení HTML reportu
+    return $htmlReport
+}
+
 #endfunction
 
 $cssStyle = "
@@ -491,17 +712,21 @@ Write-Verbose "Default administrator..."
 $htmlReport += "<hr><h2>Default administrator</h2>"
 $htmlReport += Get-DomainAdminAccount
 
+Write-Verbose "KRBTGT account..."
+$htmlReport += "<hr><h2>KRBTGT account</h2>"
+$htmlReport += Get-Krbtgt
+
 Write-Verbose "Password policy..."
 $htmlReport += "<hr><h2>Password policy</h2>"
 $htmlReport += Get-PasswordPolicy 
 
-Write-Verbose "Audit policy..."
-$htmlReport += "<hr><h2>Audit policy</h2>"
-Try {
-    $htmlReport += Get-ADAuditPolicy
-} Catch {
-    
-}
+Write-Verbose "Advance Audit policy..."
+$htmlReport += "<hr><h2>Advance Audit policy</h2>"
+$htmlReport += Get-ADAuditPolicy
+
+Write-Verbose "Classic Audit policy..."
+$htmlReport += "<hr><h2>Classic Audit policy</h2>"
+$htmlReport += Get-ADClassicAuditPolicy
 
 Write-Verbose "Account never expires ..."
 $htmlReport += "<hr><h2>Account never expires</h2>"
@@ -511,6 +736,31 @@ Write-Verbose "Account which can have an empty password ..."
 $htmlReport += "<hr><h2>Account which can have an empty password</h2>"
 $htmlReport += Get-CanEmptyPassword
 
+Write-Verbose "Object which logon before 3 months ..."
+$htmlReport += "<hr><h2>Object which last logon before 3 months</h2>"
+$htmlReport += Get-LastLogonObject
+
+
+Write-Verbose "Windows up to date ..."
+$htmlReport += "<hr><h2>Windows up to date</h2>"
+$htmlReport += Get-WindowsUpToDate
+
+Write-Verbose "Get size logs ..."
+$htmlReport += "<hr><h2>Size eventlogs</h2>"
+$htmlReport += Get-LogsSize
+
+Write-Verbose "Get firewall status ..."
+$htmlReport += "<hr><h2>Firewall status</h2>"
+$htmlReport += Get-FirewallStatus
+
+
+Write-Verbose "Get SMB1 status ..."
+$htmlReport += "<hr><h2>SMB1 status</h2>"
+$htmlReport += Get-SMB1Status
+
+Write-Verbose "Get Spooler status ..."
+$htmlReport += "<hr><h2>Printe spooler status</h2>"
+$htmlReport +=  Get-SpoolerStatus
 
 $htmlReport += "</body>"
 $htmlReport += "</html>"
