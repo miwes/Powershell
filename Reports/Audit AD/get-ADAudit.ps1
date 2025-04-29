@@ -479,7 +479,7 @@ Function Get-Krbtgt {
 Function Get-LastLogonObject {
  
     $threeMonthsAgo = (Get-Date).AddMonths(-3)
-    $users= Get-ADUser -filter {Enabled -eq $true} -properties Name, LastLogonDate | where {$_.LastLogonDate -lt $threeMonthsAgo -and}
+    $users= Get-ADUser -filter {Enabled -eq $true} -properties Name, LastLogonDate | where {$_.LastLogonDate -lt $threeMonthsAgo}
     
 
     $htmlReport = ''
