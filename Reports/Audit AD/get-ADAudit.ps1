@@ -8,6 +8,7 @@
         1.3 - Add Audit policy
         1.4 - add empty password, never expires
         1.5 - add more functions from ARICOMA Security Audits
+	1.6 - docasne vypnute SDHolder, 3 months pouze pro aktivni
 
 .DESCRIPTION
 .NOTES
@@ -478,7 +479,7 @@ Function Get-Krbtgt {
 Function Get-LastLogonObject {
  
     $threeMonthsAgo = (Get-Date).AddMonths(-3)
-    $users= Get-ADUser -filter * -properties Name, LastLogonDate | where {$_.LastLogonDate -lt $threeMonthsAgo}
+    $users= Get-ADUser -filter {Enabled -eq $true} -properties Name, LastLogonDate | where {$_.LastLogonDate -lt $threeMonthsAgo -and}
     
 
     $htmlReport = ''
@@ -585,7 +586,7 @@ Function Get-FirewallStatus {
 
     $htmlReport += "<table width=800>"
     foreach ($profile in $firewallStatus) {
-        $htmlReport += "<tr><td>$($profile.Name)</td><td>$($profile.Enabled)</td></tr>"
+    	$htmlReport += "<tr><td>$($profile.Name)</td><td>$($profile.Enabled)</td></tr>"
     }
     $htmlReport += "</table>"
 
@@ -704,9 +705,9 @@ $htmlReport += "<hr><h2>AD group</h2>"
 $htmlReport += "<a href='https://docs.microsoft.com/en-us/windows/security/identity-protection/access-control/active-directory-security-groups'>link</a>"
 $htmlReport += Get-ReportADGroup
 
-Write-Verbose "Admin SD Holder ..."
-$htmlReport += "<hr><h2>Admin SD Holder</h2>"
-$htmlReport += Get-AdminSDHolder
+#Write-Verbose "Admin SD Holder ..."
+#$htmlReport += "<hr><h2>Admin SD Holder</h2>"
+#$htmlReport += Get-AdminSDHolder
 
 Write-Verbose "Default administrator..."
 $htmlReport += "<hr><h2>Default administrator</h2>"
@@ -739,7 +740,6 @@ $htmlReport += Get-CanEmptyPassword
 Write-Verbose "Object which logon before 3 months ..."
 $htmlReport += "<hr><h2>Object which last logon before 3 months</h2>"
 $htmlReport += Get-LastLogonObject
-
 
 Write-Verbose "Windows up to date ..."
 $htmlReport += "<hr><h2>Windows up to date</h2>"
