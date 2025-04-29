@@ -521,23 +521,23 @@ Function Get-LastLogonObject {
 Function Get-WindowsUpToDate {
 
 
-    # Z√≠sk√°n√≠ seznamu nainstalovan√Ωch aktualizac√≠
+    # ZÌsk·nÌ seznamu nainstalovan˝ch aktualizacÌ
     $updates = Get-HotFix
 
-    # Poƒçet aktualizac√≠ k instalaci
+    # Pocet aktualizacÌ k instalaci
     $updatesCount = (New-Object -ComObject Microsoft.Update.Session).CreateUpdateSearcher().Search("IsInstalled=0").Updates.Count
 
-    # Datum posledn√≠ aktualizace
+    # Datum poslednÌ aktualizace
     $lastUpdateDate = $updates | Sort-Object -Property InstalledOn -Descending | Select-Object -First 1 -Property InstalledOn
 
     
-    # Zji≈°tƒõn√≠ zda jsou aktualizace ≈ô√≠zen√© z WSUS nebo p≈ô√≠mo z MS server≈Ø
+    # ZjiötenÌ zda jsou aktualizace rÌzenÈ z WSUS nebo prÌmo z MS serveru
     $wsusServer = (Get-ItemProperty -Path "HKLM:\\Software\\Policies\\Microsoft\\Windows\\WindowsUpdate").WUServer
 
     if ($wsusServer) {
-¬†¬†¬†     $updateSource = "<li>Updates are managed by WSUS server: $wsusServer</li>"
+†††     $updateSource = "<li>Updates are managed by WSUS server: $wsusServer</li>"
     } else {
-¬†¬†¬†     $updateSource = "<li>Updates are managed directly from Microsoft servers</li>"
+†††     $updateSource = "<li>Updates are managed directly from Microsoft servers</li>"
     }
 
 
@@ -565,10 +565,10 @@ Function Get-LogsSize {
 }
 
 Function Get-FirewallStatus {
-    # Z√≠sk√°n√≠ stavu firewallu pro v≈°echny profily
+    # ZÌsk·nÌ stavu firewallu pro vöechny profily
     $firewallStatus = Get-NetFirewallProfile -Profile Domain,Public,Private | Select-Object -Property Name, Enabled
 
-    # Kontrola, zda je firewall ≈ô√≠zen pomoc√≠ GPO
+    # Kontrola, zda je firewall rÌzen pomocÌ GPO
     $gpoStatus = Get-ItemProperty -Path "HKLM:\Software\Policies\Microsoft\WindowsFirewall" -ErrorAction SilentlyContinue
 
     $isManagedByGPO = $false
@@ -585,9 +585,9 @@ Function Get-FirewallStatus {
     $htmlReport +=  "</style>"   
 
     $htmlReport += "<table width=800>"
-  ¬†¬†foreach ($profile in $firewallStatus) {
-    	$htmlReport += "<tr><td>$($profile.Name)</td><td>$($profile.Enabled)</td></tr>"
-¬†¬†¬† }
+  ††foreach ($profile in $firewallStatus) {
+      $htmlReport += "<tr><td>$($profile.Name)</td><td>$($profile.Enabled)</td></tr>"
+††† }
     $htmlReport += "</table>"
 
     $htmlReport += "<li> Is Managed by GPO: $isManagedByGPO</li>"
@@ -596,10 +596,10 @@ Function Get-FirewallStatus {
 }
 
 Function Get-SMB1Status {
-    # Z√≠sk√°n√≠ stavu SMB1
+    # ZÌsk·nÌ stavu SMB1
     $smb1Status = Get-SMBServerConfiguration | Select EnableSMB1Protocol
 
-    # Vytvo≈ôen√≠ HTML reportu
+    # VytvorenÌ HTML reportu
     $htmlReport = @"
 
     <style>
@@ -612,20 +612,20 @@ Function Get-SMB1Status {
         <tr><th>Feature Name</th><th>Status</th></tr>
 "@
 
-    # P≈ôid√°n√≠ stavu SMB1 do HTML reportu
+    # Prid·nÌ stavu SMB1 do HTML reportu
     $htmlReport += "<tr><td>SMB1</td><td>$($smb1Status.EnableSMB1Protocol)</td></tr>"
     $htmlReport += "</table>"
 
 
-    # Vr√°cen√≠ HTML reportu
+    # Vr·cenÌ HTML reportu
     return $htmlReport
 }
 
 Function Get-SpoolerStatus {
-    # Z√≠sk√°n√≠ stavu slu≈æby Spooler
+    # ZÌsk·nÌ stavu sluûby Spooler
     $spoolerStatus = Get-Service -Name Spooler | Select-Object -Property Name, Status
 
-    # Kontrola, zda je slu≈æba Spooler zak√°z√°na pomoc√≠ GPO
+    # Kontrola, zda je sluûba Spooler zak·z·na pomocÌ GPO
     $gpoStatus = Get-ItemProperty -Path "HKLM:\Software\Policies\Microsoft\Windows NT\Printers" -Name "DisableSpooler" -ErrorAction SilentlyContinue
 
     $isDisabledByGPO = $false
@@ -633,7 +633,7 @@ Function Get-SpoolerStatus {
         $isDisabledByGPO = $true
     }
 
-    # Vytvo≈ôen√≠ HTML reportu
+    # VytvorenÌ HTML reportu
     $htmlReport = @"
     <style>
         BODY {font-family: Arial; font-size: 10pt;}
@@ -645,13 +645,13 @@ Function Get-SpoolerStatus {
         <tr><th>Service Name</th><th>Status</th></tr>
 "@
 
-    # P≈ôid√°n√≠ stavu slu≈æby Spooler do HTML reportu
+    # Prid·nÌ stavu sluûby Spooler do HTML reportu
     $htmlReport += "<tr><td>$($spoolerStatus.Name)</td><td>$($spoolerStatus.Status)</td></tr>"
     $htmlReport += "</table>"
     $htmlReport += "<h3>Disabled by GPO: $isDisabledByGPO</h3>"
     $htmlReport += "</body></html>"
 
-    # Vr√°cen√≠ HTML reportu
+    # Vr·cenÌ HTML reportu
     return $htmlReport
 }
 
@@ -764,4 +764,6 @@ $htmlReport +=  Get-SpoolerStatus
 
 $htmlReport += "</body>"
 $htmlReport += "</html>"
-$htmlReport | out-file report.html
+
+$date = Get-Date -Format "yyyyMMdd"
+$htmlReport | Out-File "report_$date.html"
