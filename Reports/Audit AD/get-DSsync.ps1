@@ -19,4 +19,4 @@ $domain.ObjectSecurity.Access | Where-Object {
     $hasTextMatch = $rightsStr -match "GenericAll|WriteDacl|WRITE_DAC"
 
     return ($hasGuidMatch -or $hasTextMatch)
-} | Select-Object IdentityReference, ActiveDirectoryRights, ObjectType, AccessControlType | Format-Table -AutoSize
+} | Select-Object IdentityReference, ActiveDirectoryRights, ObjectType, AccessControlType | Out-GrindView
