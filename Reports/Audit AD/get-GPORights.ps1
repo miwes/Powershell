@@ -1,157 +1,119 @@
 
-#requires -Version 5.1
-#requires -Modules GroupPolicy, ActiveDirectory
+# ============================================================
+# Filtr standardních systémových účtů a skupin
+# ============================================================
 
-$ErrorActionPreference = "Stop"
+$StandardNames = @(
+    "Everyone",
+    "NT AUTHORITY\Authenticated Users",
+    "NT AUTHORITY\SYSTEM",
+    "NT AUTHORITY\LOCAL SERVICE",
+    "NT AUTHORITY\NETWORK SERVICE",
+    "BUILTIN\Administrators",
+    "BUILTIN\Users",
+    "BUILTIN\Account Operators",
+    "BUILTIN\Server Operators",
+    "BUILTIN\Print Operators",
+    "BUILTIN\Backup Operators",
+    "BUILTIN\Pre-Windows 2000 Compatible Access",
+    "NT AUTHORITY\ENTERPRISE DOMAIN CONTROLLERS",
+    "CREATOR OWNER",
+    "NT AUTHORITY\SELF"
+)
 
-Import-Module ActiveDirectory
-Import-Module GroupPolicy
+# Standardní vestavěné skupiny domény (RID)
+$StandardDomainRIDs = @(
+    512, # Domain Admins
+    513, # Domain Users
+    514, # Domain Guests
+    515, # Domain Computers
+    516, # Domain Controllers
+    517, # Cert Publishers
+    518, # Schema Admins
+    519, # Enterprise Admins
+    520, # Group Policy Creator Owners
+    521, # Read-only Domain Controllers
+    522, # Cloneable Domain Controllers
+    525, # Protected Users
+    526, # Key Admins
+    527  # Enterprise Key Admins
+)
 
-# ------------------------------------------------------------
-# 1. Zjištění aktuální domény
-# ------------------------------------------------------------
+$DomainSID = (Get-ADDomain).DomainSID.Value
 
-$Domain = Get-ADDomain
-$DomainName = $Domain.DNSRoot
+$FilteredResults = @(
+    $Results | Where-Object {
+        $Name = $_.UcetNeboSkupina
+        $SID = $_.SID
 
-Write-Host ""
-Write-Host "Doména: $DomainName" -ForegroundColor Cyan
-Write-Host "Zjišťuji oprávnění k vytváření a úpravám GPO..." `
-    -ForegroundColor Cyan
+        # Ponechat nestandardní a vlastní identity
+        $IsStandard = $Name -in $StandardNames
 
-$Results = [System.Collections.Generic.List[object]]::new()
+        # Vestavěné skupiny domény identifikované pomocí SID
+        if ($SID -match '^S-1-5-21-(\d+-){3}(\d+)$') {
+            $RID = [int]($SID -split '-')[-1]
 
-# ------------------------------------------------------------
-# 2. Oprávnění ke každému existujícímu GPO
-# ------------------------------------------------------------
-
-$GPOs = Get-GPO -All -Domain $DomainName
-
-foreach ($GPO in $GPOs) {
-    try {
-        $Permissions = Get-GPPermission `
-            -Guid $GPO.Id `
-            -DomainName $DomainName `
-            -All `
-            -ErrorAction Stop
-
-        foreach ($Permission in $Permissions) {
-            $Level = $Permission.Permission.ToString()
-
-            $CanEdit = $Level -in @(
-                "GpoEdit",
-                "GpoEditDeleteModifySecurity"
-            )
-
-            $CanModifySecurity = $Level -eq "GpoEditDeleteModifySecurity"
-
-            $CanRead = $Level -in @(
-                "GpoRead",
-                "GpoApply",
-                "GpoEdit",
-                "GpoEditDeleteModifySecurity"
-            )
-
-            # Vypisujeme oprávnění relevantní pro úpravu GPO.
-            # Read a Apply samotné nejsou oprávnění k úpravám.
-            if ($CanEdit -or $CanModifySecurity) {
-                $Results.Add([PSCustomObject]@{
-                    Typ                    = "Úprava existujícího GPO"
-                    GPO                    = $GPO.DisplayName
-                    GUID                   = $GPO.Id
-                    UcetNeboSkupina        = $Permission.Trustee.Name
-                    TypSubjektu            = $Permission.Trustee.SidType
-                    Opravneni              = $Level
-                    MuzeUpravovat           = $CanEdit
-                    MuzeMenitOpravneni     = $CanModifySecurity
-                    Dediceno                = $Permission.Inherited
-                })
+            if (
+                $SID.StartsWith("$DomainSID-") -and
+                $RID -in $StandardDomainRIDs
+            ) {
+                $IsStandard = $true
             }
         }
+
+        # Odstranit pouze standardní identity
+        -not $IsStandard
     }
-    catch {
-        Write-Warning "Nepodařilo se načíst oprávnění GPO '$($GPO.DisplayName)': $($_.Exception.Message)"
-    }
-}
+)
 
-# ------------------------------------------------------------
-# 3. Kdo může vytvářet GPO v doméně
-# ------------------------------------------------------------
-# Práva ke vytváření GPO se spravují na kontejneru
-# CN=Policies,CN=System,<DN domény>.
-# Zde načítáme jeho ACL a vypisujeme ACE s právy Create Child.
+# Následující slučovací část musí pracovat s filtrem:
+$MergedResults = @(
+    $FilteredResults |
+        Group-Object Typ, GPO, GUID, UcetNeboSkupina, SID, AccessControlType |
+        ForEach-Object {
+            $Items = @($_.Group)
 
-$PoliciesDN = "CN=Policies,CN=System,$($Domain.DistinguishedName)"
-$LDAPPath = "LDAP://$PoliciesDN"
-
-try {
-    $Entry = New-Object System.DirectoryServices.DirectoryEntry($LDAPPath)
-    $null = $Entry.NativeObject
-    $ACL = $Entry.ObjectSecurity
-
-    $Rules = $ACL.GetAccessRules(
-        $true,
-        $true,
-        [System.Security.Principal.SecurityIdentifier]
-    )
-
-    foreach ($Rule in $Rules) {
-        if (
-            $Rule.AccessControlType -eq
-                [System.Security.AccessControl.AccessControlType]::Allow -and
-            (
-                $Rule.ActiveDirectoryRights -band
-                [System.DirectoryServices.ActiveDirectoryRights]::CreateChild
+            $AllRelevantRights = @(
+                $Items |
+                    ForEach-Object { $_.RelevantniPrava -split ",\s*" } |
+                    Where-Object { $_ } |
+                    Sort-Object -Unique
             )
-        ) {
-            $Identity = $Rule.IdentityReference.Value
 
-            try {
-                $Identity = $Rule.IdentityReference.Translate(
-                    [System.Security.Principal.NTAccount]
-                ).Value
+            $AllADRights = @(
+                $Items |
+                    ForEach-Object { $_.Opravneni -split ",\s*" } |
+                    Where-Object { $_ } |
+                    Sort-Object -Unique
+            )
+
+            $First = $Items[0]
+
+            [PSCustomObject]@{
+                Typ                 = $First.Typ
+                GPO                 = $First.GPO
+                GUID                = $First.GUID
+                UcetNeboSkupina     = $First.UcetNeboSkupina
+                SID                 = $First.SID
+                AccessControlType   = $First.AccessControlType
+                Opravneni           = $AllADRights -join ", "
+                RelevantniPrava     = $AllRelevantRights -join ", "
+                ObjectType          = (
+                    $Items | ForEach-Object { $_.ObjectType } |
+                    Sort-Object -Unique
+                ) -join ", "
+                InheritedObjectType = (
+                    $Items | ForEach-Object { $_.InheritedObjectType } |
+                    Sort-Object -Unique
+                ) -join ", "
+                InheritanceType     = (
+                    $Items | ForEach-Object { $_.InheritanceType } |
+                    Sort-Object -Unique
+                ) -join ", "
+                IsInherited         = (
+                    $Items | ForEach-Object { $_.IsInherited } |
+                    Sort-Object -Unique
+                ) -join ", "
             }
-            catch {}
-
-            $Results.Add([PSCustomObject]@{
-                Typ                    = "Možnost vytvářet GPO – ACL kontejneru"
-                GPO                    = "(všechna GPO v doméně)"
-                GUID                   = ""
-                UcetNeboSkupina        = $Identity
-                TypSubjektu            = ""
-                Opravneni              = $Rule.ActiveDirectoryRights.ToString()
-                MuzeUpravovat           = $false
-                MuzeMenitOpravneni     = $false
-                Dediceno                = $Rule.IsInherited
-            })
         }
-    }
-
-    $Entry.Dispose()
-}
-catch {
-    Write-Warning "Nepodařilo se načíst ACL kontejneru Policies: $($_.Exception.Message)"
-}
-
-# ------------------------------------------------------------
-# 4. Výstup
-# ------------------------------------------------------------
-
-Write-Host ""
-Write-Host "Počet nalezených položek: $($Results.Count)" `
-    -ForegroundColor Yellow
-
-if ($Results.Count -gt 0) {
-    $Output = $Results | Sort-Object Typ, GPO, UcetNeboSkupina
-
-    if (Get-Command Out-GridView -ErrorAction SilentlyContinue) {
-        $Output | Out-GridView -Title "Audit oprávnění GPO – $DomainName"
-    }
-    else {
-        $Output | Format-Table -AutoSize -Wrap
-    }
-}
-else {
-    Write-Host "Nebyly nalezeny žádné odpovídající položky." `
-        -ForegroundColor Green
-}
+)
