@@ -1,4 +1,4 @@
-$domain = [ADSI]"LDAP://DC=aclab,DC=local"
+$domain = [ADSI]"LDAP://$(([System.DirectoryServices.ActiveDirectory.Domain]::GetCurrentDomain()).GetDirectoryEntry().distinguishedName)"
 
 # 1. Přesné GUIDy pro DCSync oprávnění v AD
 $dcsyncGuids = @(
