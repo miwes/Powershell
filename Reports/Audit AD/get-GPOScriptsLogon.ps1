@@ -1,4 +1,7 @@
-﻿$path = '\\domane.int\SYSVOL\domane.int\Policies\'
+﻿$ADForestInfo = Get-ADForest
+$domain = $ADForestInfo.Name
+$path = "\\$domain\SYSVOL\$domain\Policies"
+
 
 
 function Get-IniContent ($filePath)

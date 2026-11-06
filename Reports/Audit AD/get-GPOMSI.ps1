@@ -1,4 +1,6 @@
-﻿$path = '\\domane.int\SYSVOL\domane.int\Policies\'
+﻿$ADForestInfo = Get-ADForest
+$domain = $ADForestInfo.Name
+$path = "\\$domain\SYSVOL\$domain\Policies"
 
 
 $scripts = Get-ChildItem -Path $path -Recurse -ErrorAction SilentlyContinue -Include *.aas 
